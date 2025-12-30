@@ -10,17 +10,14 @@ const STORAGE_KEY = 'softworkday_notification_schedule';
 
 const NOTIFICATION_CONTENT = {
   morning_steady: {
-    type: 'morning',
     title: "Good Morning, SoftWorkday.",
     message: "Start your day with a grounding perspective."
   },
   midday_steady: {
-    type: 'midday',
     title: "SoftWorkday Pause.",
     message: "A moment to re-center before the afternoon."
   },
   evening_steady: {
-    type: 'evening',
     title: "End of Day, SoftWorkday.",
     message: "Leave the desk behind. Transition home."
   }
@@ -39,11 +36,7 @@ chrome.runtime.onInstalled.addListener(async () => {
 chrome.alarms.onAlarm.addListener((alarm) => {
   const content = NOTIFICATION_CONTENT[alarm.name as keyof typeof NOTIFICATION_CONTENT];
   if (content) {
-    const timestamp = Date.now();
-    // Unique ID for this notification instance
-    const messageId = `note_${content.type}_${timestamp}`;
-    
-    chrome.notifications.create(messageId, {
+    chrome.notifications.create({
       type: 'basic',
       iconUrl: 'icon128.png',
       title: content.title,
@@ -53,13 +46,11 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   }
 });
 
-chrome.notifications.onClicked.addListener((notificationId) => {
-  // Use the notificationId as the message identifier in the URL
-  chrome.tabs.create({ url: `index.html?m=${notificationId}` });
+chrome.notifications.onClicked.addListener(() => {
+  chrome.tabs.create({ url: 'index.html?utm_source=notification' });
 });
 
 async function rescheduleAlarms(schedule: any) {
-  if (typeof chrome.alarms === 'undefined') return;
   await chrome.alarms.clearAll();
 
   const createAlarm = (id: string, timeStr: string) => {

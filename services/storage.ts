@@ -1,7 +1,7 @@
 
 declare const chrome: any;
 
-import { NotificationSchedule, StoredMessage } from '../types';
+import { NotificationSchedule } from '../types';
 
 const DEFAULT_SCHEDULE: NotificationSchedule = {
   morning: '09:10',
@@ -10,10 +10,15 @@ const DEFAULT_SCHEDULE: NotificationSchedule = {
 };
 
 const STORAGE_KEY = 'softworkday_notification_schedule';
-const ARCHIVE_KEY = 'softworkday_message_archive';
 
+/**
+ * Checks if running as a Chrome Extension.
+ */
 const isExtension = () => typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local;
 
+/**
+ * Persist schedule and reschedule alarms if in extension mode.
+ */
 export const saveSchedule = async (schedule: NotificationSchedule): Promise<void> => {
   if (isExtension()) {
     await chrome.storage.local.set({ [STORAGE_KEY]: schedule });
@@ -23,6 +28,9 @@ export const saveSchedule = async (schedule: NotificationSchedule): Promise<void
   }
 };
 
+/**
+ * Retrieve schedule from storage.
+ */
 export const getSchedule = async (): Promise<NotificationSchedule> => {
   if (isExtension()) {
     const result = await chrome.storage.local.get(STORAGE_KEY);
@@ -33,40 +41,17 @@ export const getSchedule = async (): Promise<NotificationSchedule> => {
   }
 };
 
+/**
+ * Reset to defaults.
+ */
 export const resetSchedule = async (): Promise<NotificationSchedule> => {
   await saveSchedule(DEFAULT_SCHEDULE);
   return DEFAULT_SCHEDULE;
 };
 
 /**
- * Message Archive Persistence
+ * Reschedule Chrome Alarms.
  */
-export const archiveMessage = async (message: StoredMessage): Promise<void> => {
-  const archive = await getArchive();
-  archive[message.id] = message;
-  
-  if (isExtension()) {
-    await chrome.storage.local.set({ [ARCHIVE_KEY]: archive });
-  } else {
-    localStorage.setItem(ARCHIVE_KEY, JSON.stringify(archive));
-  }
-};
-
-export const getMessageById = async (id: string): Promise<StoredMessage | null> => {
-  const archive = await getArchive();
-  return archive[id] || null;
-};
-
-const getArchive = async (): Promise<Record<string, StoredMessage>> => {
-  if (isExtension()) {
-    const result = await chrome.storage.local.get(ARCHIVE_KEY);
-    return result[ARCHIVE_KEY] || {};
-  } else {
-    const saved = localStorage.getItem(ARCHIVE_KEY);
-    return saved ? JSON.parse(saved) : {};
-  }
-};
-
 const rescheduleAlarms = async (schedule: NotificationSchedule) => {
   if (!isExtension() || !chrome.alarms) return;
 

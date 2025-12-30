@@ -12,13 +12,9 @@ export enum TimeOfDay {
   END_OF_DAY = 'end of day'
 }
 
-export interface StoredMessage {
-  id: string;
+export interface MessageResponse {
   text: string;
-  mood: Mood;
-  timeOfDay: TimeOfDay;
-  timestamp: number;
-  reflection?: string;
+  isError?: boolean;
 }
 
 export interface UserPreferences {
@@ -33,4 +29,4 @@ export interface NotificationSchedule {
   evening: string; // HH:MM
 }
 
-export type ViewState = 'main' | 'settings' | 'detail';
+export type ViewState = 'main' | 'settings';

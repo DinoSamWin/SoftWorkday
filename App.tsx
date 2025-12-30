@@ -1,9 +1,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Mood, TimeOfDay, ViewState, StoredMessage } from './types';
+import { Mood, TimeOfDay, ViewState } from './types';
 import { generateContextualMessage } from './services/gemini';
 import { trackEvent, trackPageView } from './services/analytics';
-import { archiveMessage, getMessageById } from './services/storage';
 import MoodSelector from './components/MoodSelector';
 import TimeSelector from './components/TimeSelector';
 import ShareCard from './components/ShareCard';
@@ -20,77 +19,18 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
   const [showQA, setShowQA] = useState(false);
-  const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
 
-  // Router logic to handle detail page via URL parameters
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const messageId = params.get('m');
-    const source = params.get('utm_source') === 'notification' ? 'notification' : 'direct';
-
-    if (messageId) {
-      handleDetailView(messageId);
-    } else {
-      trackPageView(source === 'notification' ? 'notification' : 'icon');
-    }
-  }, []);
-
-  const handleDetailView = async (id: string) => {
-    setLoading(true);
-    setView('detail');
-    
-    // Check if it's already archived
-    let stored = await getMessageById(id);
-    
-    if (stored) {
-      setMessage(stored.text);
-      setTimeOfDay(stored.timeOfDay);
-      setMood(stored.mood);
-      setReflection(stored.reflection || '');
-      setHasGenerated(true);
-      setActiveMessageId(id);
-    } else if (id.startsWith('note_')) {
-      // If it's a new notification trigger, generate it now
-      const parts = id.split('_');
-      const type = parts[1] as TimeOfDay || TimeOfDay.MORNING;
-      const text = await generateContextualMessage(Mood.NEUTRAL, type, "Checking in from notification");
-      
-      const newMessage: StoredMessage = {
-        id,
-        text,
-        mood: Mood.NEUTRAL,
-        timeOfDay: type,
-        timestamp: Date.now()
-      };
-      
-      await archiveMessage(newMessage);
-      setMessage(text);
-      setTimeOfDay(type);
-      setHasGenerated(true);
-      setActiveMessageId(id);
-    }
-    
-    setLoading(false);
-    trackEvent('detail_view_loaded', { message_id: id });
+  // Determine if opened via notification (simulated check)
+  const getTriggerSource = (): 'notification' | 'icon' | 'direct' => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('utm_source') === 'notification') return 'notification';
+    return 'icon';
   };
 
   const fetchMessage = useCallback(async (isRegeneration = false) => {
     setLoading(true);
-    const newMessageText = await generateContextualMessage(mood, timeOfDay, context);
-    
-    const id = isRegeneration && activeMessageId ? activeMessageId : `gen_${Date.now()}`;
-    const stored: StoredMessage = {
-      id,
-      text: newMessageText,
-      mood,
-      timeOfDay,
-      timestamp: Date.now(),
-      reflection: ''
-    };
-    
-    await archiveMessage(stored);
-    setMessage(newMessageText);
-    setActiveMessageId(id);
+    const newMessage = await generateContextualMessage(mood, timeOfDay, context);
+    setMessage(newMessage);
     setLoading(false);
     setHasGenerated(true);
 
@@ -99,67 +39,45 @@ const App: React.FC = () => {
       time_of_day: timeOfDay,
       has_context: context.length > 0
     });
-  }, [mood, timeOfDay, context, activeMessageId]);
+  }, [mood, timeOfDay, context]);
 
-  // Sync reflection to storage
+  // Initial greeting and lifecycle
   useEffect(() => {
-    if (activeMessageId && hasGenerated && reflection !== '') {
-      const update = async () => {
-        const existing = await getMessageById(activeMessageId);
-        if (existing) {
-          await archiveMessage({ ...existing, reflection });
-        }
-      };
-      const timeout = setTimeout(update, 1000);
-      return () => clearTimeout(timeout);
-    }
-  }, [reflection, activeMessageId, hasGenerated]);
-
-  // Initial greeting
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('m')) return; // Don't show greeting if in detail view
-
     const hours = new Date().getHours();
     if (hours < 12) setTimeOfDay(TimeOfDay.MORNING);
     else if (hours < 17) setTimeOfDay(TimeOfDay.MIDDAY);
     else setTimeOfDay(TimeOfDay.END_OF_DAY);
     
     setMessage("Welcome. How are you approaching things today?");
+    trackPageView(getTriggerSource());
   }, []);
 
+  // Regenerate when time changes (QA Testing feature)
+  useEffect(() => {
+    if (hasGenerated && showQA) {
+      fetchMessage(true);
+    }
+  }, [timeOfDay, showQA]);
+
   const toggleSettings = () => {
-    const nextView = view === 'settings' ? 'main' : 'settings';
+    const nextView = view === 'main' ? 'settings' : 'main';
     setView(nextView);
     trackEvent('view_changed', { view: nextView });
   };
 
-  const goHome = () => {
-    window.history.replaceState({}, '', window.location.pathname);
-    setView('main');
-    setHasGenerated(false);
-    setActiveMessageId(null);
-    setMessage("Welcome. How are you approaching things today?");
-  };
-
   return (
     <div className="min-h-screen flex flex-col items-center justify-start py-12 px-6 scrollbar-hide relative overflow-x-hidden">
+      {/* Micro-interactions layer */}
       <BackgroundInteractions />
 
       <div className="max-w-xl md:max-w-2xl w-full relative z-10">
         
-        {/* Brand Identity */}
+        {/* Brand Identity & Actions */}
         <header className="flex items-center justify-between mb-12 px-4">
-          <div className="w-10">
-            {view !== 'main' && (
-               <button onClick={goHome} className="text-slate-300 hover:text-slate-600 transition-colors">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256"><path d="M224,128a8,8,0,0,1-8,8H59.31l58.35,58.34a8,8,0,0,1-11.32,11.32l-72-72a8,8,0,0,1,0-11.32l72-72a8,8,0,0,1,11.32,11.32L59.31,120H216A8,8,0,0,1,224,128Z"></path></svg>
-               </button>
-            )}
-          </div>
+          <div className="w-10 opacity-0 pointer-events-none"></div> {/* Spacer for symmetry */}
           
           <div className="flex flex-col items-center text-center space-y-2">
-            <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg shadow-slate-200 cursor-pointer" onClick={goHome}>
+            <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg shadow-slate-200 cursor-pointer" onClick={() => setView('main')}>
               <div className="w-2 h-2 bg-white rounded-full"></div>
             </div>
             <h1 className="text-xl font-semibold tracking-tight text-slate-800 pt-1">SoftWorkday</h1>
@@ -179,10 +97,11 @@ const App: React.FC = () => {
         {/* Main Interface */}
         <main className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_20px_50px_rgba(0,0,0,0.03)] p-12 md:p-16 relative transition-all min-h-[500px] flex flex-col justify-center">
           {view === 'settings' ? (
-            <Settings onBack={goHome} />
+            <Settings onBack={() => setView('main')} />
           ) : (
             <div className="relative z-10 flex flex-col items-center">
               
+              {/* Message Display */}
               <div className={`transition-all duration-700 w-full text-center ${loading ? 'opacity-20 scale-[0.98]' : 'opacity-100 scale-100'}`}>
                 <blockquote className="text-2xl md:text-4xl font-serif text-slate-800 leading-[1.9] md:leading-[2.1] mb-16 italic font-normal tracking-tight">
                   “{message}”
@@ -195,7 +114,7 @@ const App: React.FC = () => {
                 </div>
               )}
 
-              {(!hasGenerated && view !== 'detail') ? (
+              {!hasGenerated ? (
                 <div className="space-y-12 w-full animate-fade-in max-w-md mx-auto">
                   <div className="text-center">
                     <p className="text-slate-400 text-xs font-medium uppercase tracking-widest mb-8">Current State</p>
@@ -222,6 +141,7 @@ const App: React.FC = () => {
                 </div>
               ) : (
                 <div className="flex flex-col items-center w-full animate-fade-in pt-8 border-t border-slate-50 space-y-8">
+                  {/* Reflection Field */}
                   <div className="w-full max-w-md mx-auto">
                     <textarea
                       placeholder="Jot down a quick reflection..."
@@ -232,22 +152,23 @@ const App: React.FC = () => {
                   </div>
 
                   <div className="flex flex-col gap-4 w-full max-w-md mx-auto">
-                    {view !== 'detail' && (
-                       <button
-                         onClick={() => fetchMessage(true)}
-                         disabled={loading}
-                         className="w-full bg-slate-900 text-white py-5 rounded-2xl font-semibold hover:bg-slate-800 transition-all active:scale-[0.99] disabled:opacity-50"
-                       >
-                         Another Perspective
-                       </button>
-                    )}
+                    <button
+                      onClick={() => fetchMessage(true)}
+                      disabled={loading}
+                      className="w-full bg-slate-900 text-white py-5 rounded-2xl font-semibold hover:bg-slate-800 transition-all active:scale-[0.99] disabled:opacity-50"
+                    >
+                      Another Perspective
+                    </button>
                     
                     <div className="flex items-center justify-center gap-6 pt-4">
                       <button
-                        onClick={goHome}
+                        onClick={() => {
+                          setHasGenerated(false);
+                          trackEvent('reset_state');
+                        }}
                         className="text-slate-400 hover:text-slate-600 text-[10px] font-bold uppercase tracking-[0.2em] transition-colors"
                       >
-                        {view === 'detail' ? 'Go Home' : 'Start Over'}
+                        Start Over
                       </button>
                       <div className="w-px h-3 bg-slate-200"></div>
                       <ShareCard message={message} timeOfDay={timeOfDay} />
@@ -264,6 +185,7 @@ const App: React.FC = () => {
             SoftWorkday • Built for the modern workday
           </p>
 
+          {/* Hidden/Subtle QA Control Toggle */}
           <div className="flex flex-col items-center">
             <button 
               onClick={() => setShowQA(!showQA)}
