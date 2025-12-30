@@ -23,7 +23,8 @@ const BackgroundInteractions: React.FC = () => {
   
   const cardRef = useRef<HTMLElement | null>(null);
   const nextId = useRef(0);
-  const requestRef = useRef<number>();
+  // Fix: Provided undefined as the initial value to satisfy the requirement for 1 argument in some TypeScript configurations
+  const requestRef = useRef<number | undefined>(undefined);
   const lastClickTime = useRef(0);
 
   // Check for reduced motion preference

@@ -7,13 +7,13 @@ import TimeSelector from './components/TimeSelector';
 import ShareCard from './components/ShareCard';
 import Settings from './components/Settings';
 import BackgroundInteractions from './components/BackgroundInteractions';
+import AppIcon from './components/AppIcon';
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewState>('main');
   const [mood, setMood] = useState<Mood>(Mood.NEUTRAL);
   const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>(TimeOfDay.MORNING);
   const [context, setContext] = useState('');
-  const [reflection, setReflection] = useState('');
   const [message, setMessage] = useState<string>('Welcome. How are you approaching things today?');
   const [loading, setLoading] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
@@ -74,7 +74,6 @@ const App: React.FC = () => {
     setHasGenerated(false);
     setMessage("Welcome. How are you approaching things today?");
     setContext('');
-    setReflection('');
   };
 
   return (
@@ -91,16 +90,16 @@ const App: React.FC = () => {
             )}
           </div>
           
-          <div className="flex flex-col items-center text-center space-y-2 cursor-pointer" onClick={goHome}>
-            <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg shadow-slate-200 transition-transform active:scale-95">
-              <div className="w-2 h-2 bg-white rounded-full"></div>
+          <div className="flex flex-col items-center text-center space-y-2 cursor-pointer group" onClick={goHome}>
+            <div className="relative">
+              <AppIcon variant="glow" size={42} className="shadow-lg shadow-slate-200 group-hover:scale-105 transition-transform duration-300 rounded-[12px]" />
             </div>
-            <h1 className="text-xl font-semibold tracking-tight text-slate-800 pt-1">SoftWorkday</h1>
+            <h1 className="text-xl font-serif font-semibold tracking-tight text-slate-800 pt-1">SoftWorkday</h1>
           </div>
 
           <button 
             onClick={toggleSettings}
-            className={`p-2 rounded-full transition-all ${view === 'settings' ? 'bg-slate-900 text-white' : 'text-slate-300 hover:text-slate-600 hover:bg-slate-50'}`}
+            className={`p-2 rounded-full transition-all ${view === 'settings' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-300 hover:text-slate-600 hover:bg-slate-50'}`}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
               <path d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160ZM136,32V44a8,8,0,0,1-16,0V32a8,8,0,0,1,16,0Zm0,192v12a8,8,0,0,1-16,0V224a8,8,0,0,1,16,0ZM32,120H44a8,8,0,0,1,0,16H32a8,8,0,0,1,0-16Zm192,0h12a8,8,0,0,1,0,16H224a8,8,0,0,1,0-16ZM62.34,51a8,8,0,0,1,0,11.32L53.86,70.83a8,8,0,1,1-11.32-11.32l8.49-8.49A8,8,0,0,1,62.34,51Zm149.8,149.8a8,8,0,0,1,0,11.32l-8.49,8.49a8,8,0,0,1-11.32-11.32l8.49-8.49A8,8,0,0,1,212.14,200.86ZM62.34,204.86a8,8,0,0,1-11.32,0l-8.49-8.49a8,8,0,0,1,11.32-11.32l8.49,8.49A8,8,0,0,1,62.34,204.86ZM212.14,51a8,8,0,0,1,11.32,11.32l-8.49,8.49a8,8,0,0,1-11.32-11.32l8.49-8.49A8,8,0,0,1,212.14,51Z"></path>
@@ -131,9 +130,9 @@ const App: React.FC = () => {
                 </div>
               )}
 
-              {/* Quote Display Area - Fine-tuned line spacing for balanced elegance */}
+              {/* Quote Display Area - Fine-tuned with Source Serif 4 */}
               <div className={`transition-all duration-700 w-full text-center py-16 ${loading ? 'opacity-0 scale-[0.98] blur-sm' : 'opacity-100 scale-100'}`}>
-                <blockquote className="text-2xl md:text-[2.1rem] font-serif text-slate-800 leading-[1.7] italic font-extralight tracking-tight max-w-[85%] mx-auto antialiased">
+                <blockquote className="text-2xl md:text-[2.2rem] font-serif text-slate-800 leading-[1.6] italic font-light tracking-tight max-w-[88%] mx-auto antialiased">
                   “{message}”
                 </blockquote>
               </div>
@@ -167,16 +166,7 @@ const App: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <div className={`flex flex-col items-center w-full animate-fade-in pt-12 border-t border-slate-50 pb-8 space-y-8 transition-all duration-500 ${loading ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
-                  <div className="w-full max-w-md mx-auto">
-                    <textarea
-                      placeholder="Quick reflection..."
-                      className="w-full p-6 bg-slate-50 border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all text-slate-600 text-sm resize-none h-24 placeholder:text-slate-300 italic"
-                      value={reflection}
-                      onChange={(e) => setReflection(e.target.value)}
-                    />
-                  </div>
-
+                <div className={`flex flex-col items-center w-full animate-fade-in pt-8 pb-8 space-y-8 transition-all duration-500 ${loading ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
                   <div className="flex flex-col gap-4 w-full max-w-md mx-auto">
                     <button
                       onClick={() => fetchMessage(true)}

@@ -56,7 +56,7 @@ const ShareCard: React.FC<ShareCardProps> = ({ message, timeOfDay }) => {
           </div>
           
           <div className="z-10 flex-grow flex items-center justify-center px-24 w-full mb-16">
-            <blockquote className="text-[52px] text-slate-900 leading-[1.7] font-extralight italic max-w-[850px]">
+            <blockquote className="text-[54px] text-slate-900 leading-[1.6] font-light italic max-w-[880px]">
               “{message}”
             </blockquote>
           </div>
@@ -67,7 +67,7 @@ const ShareCard: React.FC<ShareCardProps> = ({ message, timeOfDay }) => {
                   <div className="w-4 h-4 bg-white rounded-full"></div>
                </div>
                <div className="text-left">
-                  <div className="text-3xl font-sans font-bold tracking-tight text-slate-900">SoftWorkday</div>
+                  <div className="text-3xl font-serif font-semibold tracking-tight text-slate-900">SoftWorkday</div>
                   <div className="text-lg font-sans text-slate-400 tracking-wide font-medium">A mindful perspective for the workday</div>
                </div>
             </div>
