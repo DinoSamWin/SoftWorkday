@@ -108,39 +108,55 @@ const App: React.FC = () => {
           </button>
         </header>
 
-        <main className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_20px_50px_rgba(0,0,0,0.03)] p-12 md:p-16 relative transition-all min-h-[500px] flex flex-col justify-center">
+        <main className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_20px_50px_rgba(0,0,0,0.03)] px-12 md:px-16 py-8 relative transition-all min-h-[500px] flex flex-col justify-center overflow-hidden">
           {view === 'settings' ? (
-            <Settings onBack={() => setView('main')} />
+            <div className="py-8">
+              <Settings onBack={() => setView('main')} />
+            </div>
           ) : (
-            <div className="relative z-10 flex flex-col items-center">
-              <div className={`transition-all duration-700 w-full text-center ${loading ? 'opacity-20 scale-[0.98]' : 'opacity-100 scale-100'}`}>
-                <blockquote className="text-2xl md:text-3xl font-serif text-slate-800 leading-[2] mb-16 italic font-light tracking-tight">
+            <div className="relative z-10 flex flex-col items-center min-h-[400px] justify-center">
+              
+              {/* Top-Layer Loading Indicator Overlay */}
+              {loading && (
+                <div className="absolute inset-0 z-50 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center p-12 text-center animate-fade-in">
+                  <div className="relative mb-8">
+                    <div className="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center animate-breathe shadow-2xl shadow-slate-200">
+                      <span className="loading-emoji text-3xl"></span>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-slate-900 text-xs font-bold uppercase tracking-[0.6em] animate-pulse">Finding your perspective</p>
+                    <p className="text-slate-400 text-sm font-medium italic">Taking a quiet moment...</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Quote Display Area - Fine-tuned line spacing for balanced elegance */}
+              <div className={`transition-all duration-700 w-full text-center py-16 ${loading ? 'opacity-0 scale-[0.98] blur-sm' : 'opacity-100 scale-100'}`}>
+                <blockquote className="text-2xl md:text-[2.1rem] font-serif text-slate-800 leading-[1.7] italic font-extralight tracking-tight max-w-[85%] mx-auto antialiased">
                   “{message}”
                 </blockquote>
               </div>
 
-              {loading && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-8 h-8 border-2 border-slate-100 border-t-slate-800 rounded-full animate-spin"></div>
-                </div>
-              )}
-
+              {/* Interaction Block */}
               {!hasGenerated ? (
-                <div className="space-y-12 w-full animate-fade-in max-w-md mx-auto">
+                <div className={`space-y-12 w-full animate-fade-in max-w-md mx-auto pb-8 transition-all duration-500 ${loading ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
                   <div className="text-center">
                     <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-8">Current State</p>
                     <MoodSelector currentMood={mood} onSelect={setMood} />
                   </div>
                   
                   <div className="space-y-6">
-                    <input 
-                      type="text" 
-                      placeholder="Context? (e.g. busy morning)"
-                      className="w-full px-8 py-5 bg-slate-50 border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all text-slate-600 text-sm placeholder:text-slate-300"
-                      value={context}
-                      onChange={(e) => setContext(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && fetchMessage(false)}
-                    />
+                    <div className="relative group">
+                      <input 
+                        type="text" 
+                        placeholder="Context? (e.g. busy morning)"
+                        className="w-full px-8 py-5 bg-slate-50 border border-transparent rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all text-slate-600 text-sm placeholder:text-slate-300 group-hover:bg-slate-100"
+                        value={context}
+                        onChange={(e) => setContext(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && fetchMessage(false)}
+                      />
+                    </div>
                     <button
                       onClick={() => fetchMessage(false)}
                       disabled={loading}
@@ -151,7 +167,7 @@ const App: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col items-center w-full animate-fade-in pt-8 border-t border-slate-50 space-y-8">
+                <div className={`flex flex-col items-center w-full animate-fade-in pt-12 border-t border-slate-50 pb-8 space-y-8 transition-all duration-500 ${loading ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
                   <div className="w-full max-w-md mx-auto">
                     <textarea
                       placeholder="Quick reflection..."
