@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { trackEvent } from '../services/analytics';
 
@@ -16,13 +15,15 @@ const ShareCard: React.FC<ShareCardProps> = ({ message, timeOfDay }) => {
     if (!cardRef.current) return;
     try {
       // @ts-ignore
-      const canvas = await window.html2canvas(cardRef.current, {
+      const html2canvas = window.html2canvas;
+      if (!html2canvas) throw new Error("html2canvas not loaded");
+
+      const canvas = await html2canvas(cardRef.current, {
         backgroundColor: '#ffffff',
-        scale: 3, 
+        scale: 2, 
         useCORS: true,
         logging: false,
         width: 1080,
-        height: 1080,
       });
       
       const link = document.createElement('a');
@@ -33,47 +34,43 @@ const ShareCard: React.FC<ShareCardProps> = ({ message, timeOfDay }) => {
       trackEvent('share_card_generated', { time_of_day: timeOfDay });
     } catch (err) {
       console.error('Failed to capture card', err);
+      alert("Could not generate image. Please try again.");
     }
   };
 
   return (
     <>
-      {/* Hidden container for card generation */}
-      <div className="fixed -left-[4000px] top-0 pointer-events-none">
+      <div className="fixed -left-[9999px] top-0 pointer-events-none" aria-hidden="true">
         <div 
           ref={cardRef}
-          className="w-[1080px] h-[1080px] bg-white flex flex-col items-center justify-between p-24 text-center font-serif relative"
+          className="w-[1080px] min-h-[1080px] bg-white flex flex-col items-center p-24 text-center font-serif relative overflow-hidden"
         >
-          <div className="absolute top-0 left-0 w-4 h-full bg-slate-900"></div>
-          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-slate-50 rounded-full -mr-[200px] -mt-[200px]"></div>
+          <div className="absolute top-0 left-0 w-4 h-full bg-slate-900 z-0"></div>
+          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-slate-50 rounded-full -mr-[200px] -mt-[200px] z-0 opacity-50"></div>
           
-          <div className="z-10 mt-12 flex flex-col items-center gap-4">
-             <div className="text-slate-400 uppercase tracking-[0.5em] text-2xl font-sans font-bold">
+          <div className="z-10 mt-12 mb-16 flex flex-col items-center gap-4 w-full">
+             <div className="text-slate-400 uppercase tracking-[0.6em] text-2xl font-sans font-bold">
                {timeOfDay} baseline
              </div>
-             <div className="w-12 h-px bg-slate-200"></div>
+             <div className="w-16 h-px bg-slate-200"></div>
           </div>
           
-          <div className="z-10 flex-grow flex items-center justify-center px-16 max-w-[900px]">
-            <blockquote className="text-[64px] text-slate-900 leading-[1.6] font-normal italic">
+          <div className="z-10 flex-grow flex items-center justify-center px-24 w-full mb-16">
+            <blockquote className="text-[52px] text-slate-900 leading-[1.9] font-light italic max-w-[850px]">
               “{message}”
             </blockquote>
           </div>
           
-          <div className="z-10 mb-12 flex flex-col items-center gap-6">
+          <div className="z-10 mt-auto mb-12 flex flex-col items-center gap-6 w-full">
             <div className="flex items-center gap-4">
-               <div className="w-16 h-16 bg-slate-900 rounded-[1.25rem] flex items-center justify-center shadow-2xl">
-                  <div className="w-3.5 h-3.5 bg-white rounded-full"></div>
+               <div className="w-16 h-16 bg-slate-900 rounded-[1.25rem] flex items-center justify-center">
+                  <div className="w-4 h-4 bg-white rounded-full"></div>
                </div>
                <div className="text-left">
                   <div className="text-3xl font-sans font-bold tracking-tight text-slate-900">SoftWorkday</div>
-                  <div className="text-lg font-sans text-slate-400 tracking-wide">A mindful baseline for your workday</div>
+                  <div className="text-lg font-sans text-slate-400 tracking-wide font-medium">A mindful perspective for the workday</div>
                </div>
             </div>
-          </div>
-
-          <div className="absolute bottom-10 right-20 text-slate-100 font-sans text-[100px] font-bold select-none">
-            SoftWorkday
           </div>
         </div>
       </div>
